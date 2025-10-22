@@ -3,7 +3,7 @@ set -euo pipefail
 
 # restore_pg_configs.sh
 # Usage:
-#   ./restore_pg_configs.sh "2025-10-22T08:00:00" 17 test1 /mnt/sdc-data1/test1_restore
+#   ./restore_pg_configs.sh "2025-10-22 08:00:00" 17 test1 /mnt/sdc-data1/test1_restore
 #
 # Restores, as of the given timestamp:
 #   postgresql/<version>/<cluster>/postgresql.conf
@@ -13,16 +13,17 @@ set -euo pipefail
 # From the /etc git repo (via sudo) into the destination directory,
 # with final ownership postgres:postgres.
 
-if [[ $# -ne 4 ]]; then
-  echo "Usage: $0 <DATESTAMP> <PG_VERSION> <CLUSTER_NAME> <DEST_DIR>" >&2
-  echo "Example: $0 '2025-10-22T08:00:00' 17 test1 /mnt/sdc-data1/test1_restore" >&2
+if [[ $# -ne 5 ]]; then
+  echo "Usage: $0 <DATESTAMP> <PG_VERSION> <OLD_CLUSTER_NAME> <NEW_CLUSTER_NAME> <DEST_DIR>" >&2
+  echo "Example: $0 '2025-10-22 08:00:00' 17 test1 test1_restore /mnt/sdc-data1/test1_restore" >&2
   exit 1
 fi
 
 DATESTAMP="$1"
 PG_VERSION="$2"
-CLUSTER="$3"
-DEST_DIR="$4"
+OLD_CLUSTER="$3"
+NEW_CLUSTER="$4"
+DEST_DIR="$5"
 
 REPO_DIR="/etc"
 BRANCH="main"   # change if your default branch is different
@@ -40,7 +41,7 @@ fi
 echo "Using commit $COMMIT from $REPO_DIR (<= $DATESTAMP)"
 
 # File paths in the repo
-BASE="postgresql/$PG_VERSION/$CLUSTER"
+BASE="postgresql/$PG_VERSION/$OLD_CLUSTER"
 FILES=(
   "$BASE/postgresql.conf"
   "$BASE/pg_hba.conf"
