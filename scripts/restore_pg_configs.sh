@@ -64,6 +64,20 @@ for F in "${FILES[@]}"; do
   # Write file contents with sudo; preserve only the contents (no extra newline)
   sudo git -C "$REPO_DIR" show "${COMMIT}:${F}" | sudo tee "$OUT" >/dev/null
 
+  # If this is postgresql.conf, disable archiving to prevent conflicts with the original cluster
+  if [[ "$BASENAME" == "postgresql.conf" ]]; then
+    echo "Modifying postgresql.conf to disable archiving..."
+    # Comment out any existing archive_mode or archive_command lines
+    sudo sed -i 's/^\s*\(archive_mode\s*=.*\)$/# \1  # Commented by restore process/' "$OUT"
+    sudo sed -i 's/^\s*\(archive_command\s*=.*\)$/# \1  # Commented by restore process/' "$OUT"
+
+    # Add archive_mode=off at the end of the file with explanatory comment
+    echo "" | sudo tee -a "$OUT" >/dev/null
+    echo "# Archive configuration modified by restore process to prevent conflicts" | sudo tee -a "$OUT" >/dev/null
+    echo "# with the original cluster's backup stanza" | sudo tee -a "$OUT" >/dev/null
+    echo "archive_mode = off" | sudo tee -a "$OUT" >/dev/null
+  fi
+
   # Reasonable, secure perms for these config files; adjust if needed
   sudo chown postgres:postgres "$OUT"
   sudo chmod 640 "$OUT"
